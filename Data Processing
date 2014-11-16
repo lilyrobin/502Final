@@ -30,4 +30,4 @@ fsample <-
     }
 #fsample("Data.tsv", 1000, 1)
 
-dat<-fsample("Data.tsv", 100000, 1)
+dat2<-fsample("Data.tsv", 100000, 1, header=TRUE)
