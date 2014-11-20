@@ -1,0 +1,10 @@
+#density plots for various variables and LOS, only on days 0-30 interval
+qplot(LOS, data=dat[dat$LOS<31,], geom="density", fill=as.factor(GENDER), alpha=I(.5))
+qplot(LOS, data=dat[dat$LOS<31,], geom="density", fill=as.factor(RACE), alpha=I(.5))
+qplot(LOS, data=dat[dat$LOS<31,], geom="density", fill=as.factor(MARSTAT), alpha=I(.5))
+qplot(LOS, data=dat[(dat$LOS<31 & GENDER==2 & PREG!=-9),], geom="density", fill=as.factor(PREG), alpha=I(.5))
+qplot(LOS, data=dat[dat$LOS<31,], geom="density", fill=as.factor(REGION), alpha=I(.5))
+qplot(LOS, data=dat[dat$LOS<31,], geom="density", fill=as.factor(DIVISION), alpha=I(.5))
+plot(DAYWAIT, LOS)
+qplot(LOS, data=dat[dat$LOS<31,], geom="density", fill=as.factor(REASON), alpha=I(.5))
+qplot(LOS, data=dat[dat$LOS<31,], geom="density", fill=as.factor(SUB1), alpha=I(.5))
