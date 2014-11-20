@@ -8,3 +8,17 @@ qplot(LOS, data=dat[dat$LOS<31,], geom="density", fill=as.factor(DIVISION), alph
 plot(DAYWAIT, LOS)
 qplot(LOS, data=dat[dat$LOS<31,], geom="density", fill=as.factor(REASON), alpha=I(.5))
 qplot(LOS, data=dat[dat$LOS<31,], geom="density", fill=as.factor(SUB1), alpha=I(.5))
+
+#reason:
+hist(REASON, xlim=c(0, 7))
+hist_cut = qplot(REASON, data=dat, geom="histogram", binwidth=1, fill=as.factor(GENDER)) +xlim(0, 7)
+hist_cut + geom_bar()
+
+hist_cut = qplot(REASON, data=dat, geom="histogram", binwidth=.9, fill=as.factor(REGION)) +xlim(0, 7)
+hist_cut + geom_bar()
+
+hist_cut = qplot(REASON, data=dat, geom="histogram", binwidth=.9, fill=as.factor(MARSTAT)) +xlim(0, 7)
+hist_cut + geom_bar()
+
+hist_cut = qplot(REASON, data=dat, geom="histogram", binwidth=.9, fill=as.factor(ARRESTS)) +xlim(0, 7)
+hist_cut + geom_bar()
