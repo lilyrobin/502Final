@@ -34,16 +34,19 @@ dat<-fsample("Data.tsv", 100000, 1, header=TRUE)
 
 #data cleaning
 #delete case id, unnecessary
-dat<-dat[,-1]
+#dat<-dat[,-1]
 
 #delete rows with missing gender
-dat<-dat[dat$GENDER!=-9,]
+#dat<-dat[dat$GENDER!=-9,]
 #removed .1%
 
 #region variables repetitive, take out CBSA, PMSA (too detailed), DIVISION, REGION
-dat<-dat[,-c(16, 17, 18, 19)]
+#dat<-dat[,-c(16, 17, 18, 19)]
 
 #should we replace the LOS variables higher than 30 with the random value (from uniform) for that range? probably, or should at least replace them with something, so the variable is ~continuous
+
+#deleting caseID, unnecessary geographies, and flags
+dat2<-dat[,-c(1, 17, 18, 19, 20, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60)]
 
 #31 to 31-45
 #32 to 46-60
@@ -62,7 +65,7 @@ LOS2[LOS2==33] <- 61
 LOS2[LOS2==32] <- 46
 LOS2[LOS2==31] <- 31
 
-dat4<-dat
+dat4<-dat2
 dat4$LOS<-LOS2
 
 #training and testing sets
