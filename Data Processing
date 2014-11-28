@@ -30,4 +30,44 @@ fsample <-
     }
 #fsample("Data.tsv", 1000, 1)
 
-dat2<-fsample("Data.tsv", 100000, 1, header=TRUE)
+dat<-fsample("Data.tsv", 100000, 1, header=TRUE)
+
+#data cleaning
+#delete case id, unnecessary
+dat<-dat[,-1]
+
+#delete rows with missing gender
+dat3<-dat[dat$GENDER!=-9,]
+#removed .1%
+
+#region variables repetitive, take out CBSA, PMSA (too detailed), DIVISION, REGION
+dat3<-dat3[,-c(16, 17, 18, 19)]
+
+#should we replace the LOS variables higher than 30 with the random value (from uniform) for that range? probably, or should at least replace them with something, so the variable is ~continuous
+
+#31 to 31-45
+#32 to 46-60
+#33 to 61-90
+#34 to 91-120
+#35 to 121-180
+#36 to 181-365
+#37 to 365+
+
+LOS2<-dat$LOS
+LOS2[LOS2==37] <- 366
+LOS2[LOS2==36] <- 181
+LOS2[LOS2==35] <- 121
+LOS2[LOS2==34] <- 91
+LOS2[LOS2==33] <- 61
+LOS2[LOS2==32] <- 46
+LOS2[LOS2==31] <- 31
+
+dat4<-dat
+dat4$LOS<-LOS2
+
+#training and testing sets
+smp_size <- floor(0.8 * nrow(dat4))
+set.seed(1)
+train_ind <- sample(seq_len(nrow(dat4)), size = smp_size)
+train <- dat4[train_ind, ]
+test <- dat4[-train_ind, ]
