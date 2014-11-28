@@ -37,11 +37,11 @@ dat<-fsample("Data.tsv", 100000, 1, header=TRUE)
 dat<-dat[,-1]
 
 #delete rows with missing gender
-dat3<-dat[dat$GENDER!=-9,]
+dat<-dat[dat$GENDER!=-9,]
 #removed .1%
 
 #region variables repetitive, take out CBSA, PMSA (too detailed), DIVISION, REGION
-dat3<-dat3[,-c(16, 17, 18, 19)]
+dat<-dat[,-c(16, 17, 18, 19)]
 
 #should we replace the LOS variables higher than 30 with the random value (from uniform) for that range? probably, or should at least replace them with something, so the variable is ~continuous
 
