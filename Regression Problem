@@ -1,0 +1,29 @@
+#regular lin reg
+lin1<-lm(LOS2~., data=train)
+summary(lin1) #r squared .28
+#train MSE
+mean(lin1$residuals^2) #4964
+#test MSE
+preds<-predict.lm(lin1, test)
+mset<-mean((preds-test$LOS)^2) #5037
+
+#lasso 
+x=model.matrix(LOS2~.,dat)[,-41]
+y=dat$LOS2
+ytrain = y[train_ind]
+xtrain = x[train_ind,]
+xtest = x[-train_ind,]
+ytest<- y[-train_ind]
+
+grid=10^seq(10,-2,length=100)
+lasso.mod=glmnet(xtrain, ytrain,alpha=1, lambda=grid)
+plot(lasso.mod)
+summary(lasso.mod)
+
+cv.out=cv.glmnet(xtrain,ytrain,alpha=1)
+plot(cv.out)
+bestlam=cv.out$lambda.min
+lasso.pred=predict(lasso.mod,s=bestlam ,newx=xtest)
+mean((lasso.pred-ytest)^2) #5051 MSE not much better...
+
+#trees
