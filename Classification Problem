@@ -1,0 +1,136 @@
+####################################################################################
+     ############################ DS 502 PROJECT ################################
+setwd("/Users/jplasse_5489/DS 502 Data")
+library(ISLR)
+library(class)
+library(MASS)
+library(randomForest)
+library(psych) # Has the trace function
+library(e1071) # Support vector machine methods
+library(tree) # Tree methods
+# Use a function fsample() to load in the data
+fsample <-
+  function(fname, n, seed, header=FALSE, ..., reader = read.table)
+  {
+    set.seed(seed)
+    con <- file(fname, open="r")
+    hdr <- if (header) {
+      readLines(con, 1L)
+    } else character()
+    
+    buf <- readLines(con, n)
+    n_tot <- length(buf)
+    
+    repeat {
+      txt <- readLines(con, n)
+      if ((n_txt <- length(txt)) == 0L)
+        break
+      
+      n_tot <- n_tot + n_txt
+      n_keep <- rbinom(1, n_txt, n_txt / n_tot)
+      if (n_keep == 0L)
+        next
+      
+      keep <- sample(n_txt, n_keep)
+      drop <- sample(n, n_keep)
+      buf[drop] <- txt[keep]
+    }
+    
+    reader(textConnection(c(hdr, buf)), header=header, ...)
+  }
+# Read in a sample of the data
+data = fsample("Data.tsv", 250000, 1, header=TRUE)
+attach(data)
+
+# Clean up the data, deleting redundant variables etc. I deleted STFIPS too.
+data = data[,-c(1, 16, 17, 18, 19, 20, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60)]
+# Make a copy of the data
+dat = data
+# Change all -9's to NA, the R default for missing values
+dat[data==-9] = NA
+
+# Convert all the columns to catagorical variables
+dat = data.frame(lapply(dat, as.factor), stringsAsFactors=FALSE)
+attach(dat)
+# Change the few quant. variables back using as.numeric()
+dat$LOS = as.numeric(dat$LOS)
+dat$DISYR = as.numeric(dat$DISYR)
+dat$DAYWAIT = as.numeric(dat$DAYWAIT)
+dat$NUMSUBS = as.numeric(dat$NUMSUBS)
+attach(dat)
+
+# GOAL: Predict the reason for the client leaving
+#                   Classes for REASON:
+#     1 - TREATMENT COMPLETED
+#     2 - LEFT AGAINST PROF ADVICE 
+#     3 - TERMINATED BY FACUTLY
+#     4 - TRANSFERED TO ANOTHER FACILITY
+#     5 - INCARCERATED
+#     6 - DEATH
+#     7 - OTHER
+#     8 - UNKNOWN
+#    -9 - DATA IS MISSING
+# Make sure to see how R codes the factors
+
+N = nrow(dat) # Number of observations 
+# Split into training and testing data
+set.seed(1)
+train = sample(1:N,N*.75,replace=FALSE)   # Train our models on 75% of the data
+test = (-train) 
+dat.train = dat[train,] # Training data
+dat.test = dat[test,]   # Testing data
+
+########## IMPORTANT!!!! ##########
+# How does R interpret NA when using classification methods? Does it remove them?
+# It looks like every observation has a NA in some category, so if R deletes
+# an observation with NA recorded for any of the variables, we are in trouble.
+########## !!!!!!!!!!!! ##########
+
+##### TREES #####
+set.seed(1)
+# Fit a tree
+myTree = tree(REASON~.-LOS-DISYR,data=dat.train)
+plot(myTree)
+text(myTree,pretty=0)
+summary(myTree)  # 0.25 training error; I cant reproduce this number. See below.
+
+# Calculate training error
+pred = predict(myTree,dat.train,type="class")
+A = matrix(table(pred,dat.train$REASON),nrow=7,ncol=7)
+trainObs = sum(A) # Number of training samples used 
+1 - tr(A)/trainObs # Should be misclassification rate, but its way off. 
+
+# Calculate the testing error
+treePred = predict(myTree,dat.test,type="class")
+A = matrix(table(treePred,dat.test$REASON),nrow=7,ncol=7)
+obsUsed = sum(A) # Number of observations R used
+# Percentage of correct predictions
+testError = tr(A)/obsUsed 
+
+# Try pruning
+cv.myTree = cv.tree(myTree,FUN=prune.misclass)
+plot(cv.myTree$size,cv.myTree$dev,type="b",xlab="Tree Size",ylab="CV Error",pch=18,cex=2)
+optSize = cv.myTree$size[which.min(cv.myTree$dev)]
+prunedTree = prune.misclass(myTree,best=optSize)
+plot(prunedTree)
+text(prunedTree,pretty=0)
+# Calculate the testing error
+ptreePred = predict(prunedTree,dat.test,type="class")
+B = matrix(table(ptreePred,dat.test$REASON),nrow=7,ncol=7)
+obsUsed = sum(B)
+# Percentage of correct predictions; not good =(
+pruneTestError = tr(B)/obsUsed 
+
+# Bagging 
+set.seed(1)
+# Doesn't handled missing data. So we cant use random forests
+bagTree = randomForest(REASON~.-LOS-DISYR,data=dat.train,mtry=30,importance=TRUE)
+# Try rfImpute() which is in the same library but handles missing data
+# However, rfImpute() cannot have any NA's in the response vector
+# Our training data has only 24 NA's in the response vector
+# This is only .0128% of the observations in the training sample; omit them.
+x = dat.train[,-18]
+y = dat.train$REASON
+x = x[-which(is.na(y)==TRUE),]
+y = y[-which(is.na(y)==TRUE)]
+bagTree = rfImpute(x,y,iter=2,ntrees=10) # This is giving me errors
